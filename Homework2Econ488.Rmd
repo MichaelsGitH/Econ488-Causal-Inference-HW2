@@ -1,0 +1,244 @@
+---
+title: "Homework 2"
+author: "Michael Vargas"
+date: "April 17, 2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(data.table)
+library(systemfit)
+```
+
+```{r, echo=TRUE}
+###############################################
+# Premise: A First Look at The NSW Experiment #
+###############################################  
+# 1) 
+setwd("C:\\Users\\micha\\Desktop\\ECON 488 CAUSAL INFERENCE\\Homework2")
+controlData <- read.csv("nswre74_control.csv")
+treatedData <- read.csv("nswre74_treated.csv")
+totalData <- rbind(controlData, treatedData)
+
+# Create sample average for treated and control groups for all 10 variables
+ageTreated <- totalData$age[totalData$treat==1]
+averageAgeTreated <- mean(ageTreated)
+ageControl <- totalData$age[totalData$treat==0]
+averageAgeControl <- mean(ageControl)
+
+eduTreated <- totalData$edu[totalData$treat==1]
+averageEduTreated <- mean(eduTreated)
+eduControl <- totalData$edu[totalData$treat==0]
+averageEduControl <- mean(eduControl)
+
+noDegreeTreated <- totalData$nodegree[totalData$treat==1]
+averageNoDegreeTreated <- mean(noDegreeTreated)
+noDegreeControl <- totalData$nodegree[totalData$treat==0]
+averageNoDegreeControl <- mean(noDegreeControl)
+
+blackTreated <- totalData$black[totalData$treat==1]
+averageBlackTreated <- mean(blackTreated)
+blackControl <- totalData$black[totalData$treat==0]
+averageBlackControl <- mean(blackControl)
+
+hispanicTreated <- totalData$hisp[totalData$treat==1]
+averageHispanicTreated <- mean(hispanicTreated)
+hispanicControl <- totalData$hisp[totalData$treat==0]
+averageHispanicControl <- mean(hispanicControl)
+
+marriedTreated <- totalData$married[totalData$treat==1]
+averageMarriedTreated <- mean(marriedTreated)
+marriedControl <- totalData$married[totalData$treat==0]
+averageMarriedControl <- mean(marriedControl)
+
+unemployed74Treated <- totalData$u74[totalData$treat==1]
+averageUnemployed74Treated <- mean(unemployed74Treated)
+unemployed74Control <- totalData$u74[totalData$treat==0]
+averageUnemployed74Control <- mean(unemployed74Control)
+
+unemployed75Treated <- totalData$u75[totalData$treat==1]
+averageUnemployed75Treated <- mean(unemployed75Treated)
+unemployed75Control <- totalData$u75[totalData$treat==0]
+averageUnemployed75Control <- mean(unemployed75Control)
+
+realEarnings74Treated <- totalData$re74[totalData$treat==1]
+averageRealEarnings74Treated <- mean(realEarnings74Treated)
+realEarnings74Control <- totalData$re74[totalData$treat==0]
+averageRealEarnings74Control <- mean(realEarnings74Control)
+
+realEarnings75Treated <- totalData$re75[totalData$treat==1]
+averageRealEarnings75Treated <- mean(realEarnings75Treated)
+realEarnings75Control <- totalData$re75[totalData$treat==0]
+averageRealEarnings75Control <- mean(realEarnings75Control)
+
+realEarnings78Treated <- totalData$re78[totalData$treat==1]
+averageRealEarnings78Treated <- mean(realEarnings78Treated)
+realEarnings78Control <- totalData$re78[totalData$treat==0]
+averageRealEarnings78Control <- mean(realEarnings78Control)
+
+# Create table to compare sample averages across treated and control groups
+sampleAverageTreated <- c(averageAgeTreated, averageEduTreated,averageBlackTreated, averageHispanicTreated, averageMarriedTreated,averageNoDegreeTreated,  averageRealEarnings74Treated, averageRealEarnings75Treated, averageRealEarnings78Treated, averageUnemployed74Treated, averageUnemployed75Treated)
+
+sampleAverageControl <- c(averageAgeControl, averageEduControl, averageBlackControl, averageHispanicControl, averageMarriedControl,averageNoDegreeControl,averageRealEarnings74Control, averageRealEarnings75Control,averageRealEarnings78Control,averageUnemployed74Control, averageUnemployed75Control)
+
+sampleAveragesAcrossVars <- data.table(variables = colnames(totalData[,-1]), treatedAverage = round(sampleAverageTreated, 3), controlAverage = round(sampleAverageControl,3))
+
+sampleAveragesAcrossVars
+```
+
+```{r, }
+###############################
+# Part 1: Testing Balance     #
+###############################
+
+# 1) The tests suggest that there exists a statistically significant difference between the sample averages of the treated and controlled groups for the variables "hisp" and "u75" (at the 10% level), and "nodegree" (at the 1% level). This suggests the aforementioned covariates are not balanced across the groups, i.e., we have an over or under representation of individuals with particular covariate values in one of the groups.
+
+realEarnings78 <- totalData$re78
+treatment <- totalData$treat
+
+age <- totalData$age
+ageTest <- lm(age ~ treatment, data = totalData)
+summary(ageTest)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+education <- totalData$edu
+educationTest <- lm(education ~ treatment, data = totalData)
+summary(educationTest)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+black <- totalData$black
+blackTest <- lm(black ~ treatment, data = totalData)
+summary(blackTest)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+hispanic <- totalData$hisp
+hispanicTest <- lm(hispanic ~ treatment, data = totalData)
+summary(hispanicTest)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+married <- totalData$married
+marriedTest <- lm(married ~ treatment, data = totalData)
+summary(marriedTest)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+noDegree <- totalData$nodegree
+noDegreeTest <- lm(noDegree ~ treatment, data = totalData)
+summary(noDegreeTest)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+realEarnings74 <- totalData$re74
+realEarnings74Test <- lm(realEarnings74 ~ treatment, data = totalData)
+summary(realEarnings74Test)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+realEarnings75 <- totalData$re75
+realEarnings75Test <- lm(realEarnings75 ~ treatment, data = totalData)
+summary(realEarnings75Test)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+
+unemployed74 <- totalData$u74
+unemployed74Test <- lm(unemployed74 ~ treatment, data = totalData)
+summary(unemployed74Test)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+unemployed75 <- totalData$u75
+unemployed75Test <- lm(unemployed75 ~ treatment, data = totalData)
+summary(unemployed75Test)$coefficients["treatment",c("Estimate", "Std. Error", "Pr(>|t|)")]
+
+```
+
+```{r,}
+# 2A) The estimates and standard errors are the same for both methods. This makes sense, since the equations in SUR system have the same covariate (treatment).
+eq1 <- age ~ treatment
+eq2 <- education ~ treatment
+eq3 <- black ~ treatment
+eq4 <- hispanic ~ treatment
+eq5 <- married ~ treatment
+eq6 <- noDegree ~ treatment
+eq7 <- realEarnings74 ~ treatment
+eq8 <- realEarnings75 ~ treatment
+eq9 <- unemployed74 ~ treatment
+eq10 <- unemployed75 ~ treatment
+system <- list(eq1 = eq1, eq2 = eq2, eq3 = eq3, eq4 = eq4, eq5 = eq5,
+               eq6 = eq6, eq7 = eq7, eq8 = eq8, eq9 = eq9, eq10 = eq10)
+sur_fit <- systemfit::systemfit(system, method = "SUR", data=totalData)
+summary(sur_fit)
+```
+
+```{r}
+# 2B) The likelihood ratio test results are statistically significant at the 5% level. This means there is evidence that the coefficients added to the last model (sur_fit) added predictive power, indicating at least one of them is non-zero.
+
+eq1 <- age ~ 1
+eq2 <- education ~ 1
+eq3 <- black ~ 1
+eq4 <- hispanic ~ 1
+eq5 <- married ~ 1
+eq6 <- noDegree ~ 1
+eq7 <- realEarnings74 ~ 1
+eq8 <- realEarnings75 ~ 1
+eq9 <- unemployed74 ~ 1
+eq10 <- unemployed75 ~ 1
+system <- list(eq1 = eq1, eq2 = eq2, eq3 = eq3, eq4 = eq4, eq5 = eq5,
+               eq6 = eq6, eq7 = eq7, eq8 = eq8, eq9 = eq9, eq10 = eq10)
+null_fit <- systemfit::systemfit(system, method = "SUR", data=totalData)
+lmtest::lrtest(null_fit,sur_fit)
+```
+
+```{r}
+# 3) The F-Test indicates there is evidence in favor of at least one of the coefficients being statistically different from zero at the 5% significance level. This provides evidence that the RCT was not constructed well, since there is evidence that systematic differences exist in the predetermined characteristics across treated and control groups. This may confound our outcome estimation, leading to biased results.
+
+fTestModel <- lm(treatment ~ age + education + noDegree + black + hispanic + married + unemployed74 + unemployed75 + realEarnings74 + realEarnings75, data = totalData)
+summary(fTestModel)
+
+```
+
+```{r}
+############################################
+# Part 2: The ATE of the Offer of Training #
+############################################
+
+# 1) The regression estimate of the ATE is nearly identical to the difference in  sample mean earnings estimate of ATE. The coefficient on the treatment term is statistically significant at the 1% level, providing evidence the coefficient is statistically different from zero. However, the adjusted R-squared for the linear regression model is quite low (nearly 2%), suggesting a significant portion of the variance in earnings is unaccounted for in the model.
+
+# A)
+
+sampleMeanDifferenceATE <- averageRealEarnings78Treated - averageRealEarnings78Control
+sampleMeanDifferenceATE
+
+# B)
+
+regressionATESpecZero <- lm(realEarnings78 ~ treatment, data = totalData)
+summary(regressionATESpecZero)
+regressionCoefficientATE <- coef(regressionATESpecZero)
+regressionCoefficientATE
+
+# 2)
+
+# A)
+
+regressionATESpecOne <- lm(realEarnings78 ~ treatment + noDegree + education, data = totalData)
+summary(regressionATESpecOne)
+
+# B)
+
+regressionATESpecTwo <- lm(realEarnings78 ~ treatment + age + education + noDegree + black + hispanic + married + unemployed74 + unemployed75 + realEarnings74 + realEarnings75, data = totalData)
+summary(regressionATESpecTwo)
+
+# C)
+
+totalData$age_de <- totalData$age - mean(totalData$age)
+totalData$interaction <- totalData$age_de * treatment
+
+regressionATESpecThree <- lm(realEarnings78 ~ treatment + age + education + noDegree + black + hispanic + married + unemployed74 + unemployed75 + realEarnings74 + realEarnings75 + totalData$interaction, data = totalData)
+summary(regressionATESpecThree)
+
+# D) Yes. Adding covariates that account for some variation in the outcome will increase the precision of the ATE estimate coefficient in the regression model. The ATE estimate coefficient became more statistically significant (from the 5% level to the 1% level) as additional covariates were included in the model. The adjusted R-squared also increased, indicating the additional covariates actually accounted for additional variation in the outcome. 
+
+# E) It is only problematic if the lagged variables are correlated with the treatment variable and the outcome. This would create a confounding issue.
+
+# F) Yes. This allows us to investigate how the ATE varies across different values of a covariate. For example, if the treatment variable and the nodegree variable interact, then the coefficient will tell you, relative to the base group's ATE, what is the difference in ATE's between people with degrees compared to people without degrees.
+
+# i) At the 1% level, there is evidence the treatment effect is different from zero. This requires us to assume that the treatment effect and age are independent.
+
+# ii) At the 10% level, there is evidence the treatment effect does vary by age. The p-value for the interaction coefficient is very high; even at the 20% level we fail to reject the null hypothesis.
+
+# 3) If an individual accepts the training, then on-the-job training may lead to an increase in job skills, increasing an individual's human capital (their specific stock of skills and knowledge), which enables the individual to work higher-skilled jobs, which pay more than lower-skilled jobs. 
+```
